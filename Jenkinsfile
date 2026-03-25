@@ -2,40 +2,45 @@ pipeline {
     agent any
 
     environment {
-        
-        DOCKER_HUB_USER = 'pavithrak02
-'
-        APP_NAME        = 'fibonacci-java'
-        IMAGE_NAME      = "${DOCKER_HUB_USER}/${APP_NAME}"
+        DOCKERHUB_CREDENTIALS = 'Docker-credentials'
+        IMAGE_NAME = 'pavithrak02/new_docker_image'
     }
 
     stages {
-        stage('Clone') {
+
+        stage('Build Java Application') {
             steps {
-                checkout scm
+                bat 'javac HelloWorld.java'
             }
         }
 
-        stage('Build Image') {
+        stage('Run Java Program') {
             steps {
-                script {
-                    // This uses your Dockerfile to build the image
-                    sh "docker build -t ${IMAGE_NAME}:${env.BUILD_NUMBER} ."
-                    sh "docker tag ${IMAGE_NAME}:${env.BUILD_NUMBER} ${IMAGE_NAME}:latest"
+                bat 'java HelloWorld'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t %IMAGE_NAME%:latest .'
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(
+                credentialsId: 'Docker-credentials',
+                usernameVariable: 'USER',
+                passwordVariable: 'PASS')]) {
+
+                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Push Docker Image') {
             steps {
-                // 'docker-hub-creds' is the ID we will create in Step 3
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', 
-                                 passwordVariable: 'PASS', 
-                                 usernameVariable: 'USER')]) {
-                    sh "echo \$PASS | docker login -u \$USER --password-stdin"
-                    sh "docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}"
-                    sh "docker push ${IMAGE_NAME}:latest"
-                }
+                bat 'docker push %IMAGE_NAME%:latest'
             }
         }
     }
