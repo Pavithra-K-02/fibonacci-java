@@ -10,13 +10,13 @@ pipeline {
 
         stage('Build Java Application') {
             steps {
-                bat 'javac HelloWorld.java'
+                bat 'javac Fibonacci.java'
             }
         }
 
         stage('Run Java Program') {
             steps {
-                bat 'java HelloWorld'
+                bat 'java Fibonacci'
             }
         }
 
